@@ -26,14 +26,13 @@ import (
 	tasksapi "github.com/containerd/containerd/api/services/tasks/v1"
 	versionapi "github.com/containerd/containerd/api/services/version/v1"
 	tasktypes "github.com/containerd/containerd/api/types/task"
-	"github.com/containerd/errdefs"
+	"github.com/containerd/errdefs/pkg/errgrpc"
+	"github.com/google/cadvisor/container/containerd/containers"
+	"github.com/google/cadvisor/container/containerd/pkg/dialer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/credentials/insecure"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
-
-	"github.com/google/cadvisor/container/containerd/containers"
-	"github.com/google/cadvisor/container/containerd/pkg/dialer"
 )
 
 type client struct {
@@ -114,7 +113,7 @@ func (c *client) LoadContainer(ctx context.Context, id string) (*containers.Cont
 		ID: id,
 	})
 	if err != nil {
-		return nil, errdefs.FromGRPC(err)
+		return nil, errgrpc.ToNative(err)
 	}
 	return containerFromProto(r.Container), nil
 }
@@ -124,7 +123,7 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 		ContainerID: id,
 	})
 	if err != nil {
-		return 0, errdefs.FromGRPC(err)
+		return 0, errgrpc.ToNative(err)
 	}
 	if response.Process.Status == tasktypes.Status_UNKNOWN {
 		return 0, ErrTaskIsInUnknownState
@@ -135,7 +134,7 @@ func (c *client) TaskPid(ctx context.Context, id string) (uint32, error) {
 func (c *client) Version(ctx context.Context) (string, error) {
 	response, err := c.versionService.Version(ctx, &emptypb.Empty{})
 	if err != nil {
-		return "", errdefs.FromGRPC(err)
+		return "", errgrpc.ToNative(err)
 	}
 	return response.Version, nil
 }
